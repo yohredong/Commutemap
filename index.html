@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KL Bicycle Commuting Map</title>
+    <meta name="description" content="Interactive map of community-submitted bicycle commuting routes across Kuala Lumpur.">
+    
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="map"></div>
+    
+    <!-- Re-open sidebar button (hidden by default, shown when sidebar is closed) -->
+    <button class="sidebar-toggle" id="sidebar-toggle" title="Show info panel">☰</button>
+
+    <div class="glass-panel sidebar" id="sidebar">
+        <!-- Close button -->
+        <button class="sidebar-close" id="sidebar-close" title="Close panel">✕</button>
+
+        <div class="sidebar-header">
+            <h1>KL Bicycle Commuting Map</h1>
+            <p class="subtitle">Community Submitted Routes</p>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <span class="stat-value" id="total-routes">–</span>
+                <span class="stat-label">Total Routes</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-value" id="total-distance">–</span>
+                <span class="stat-label">Total KM</span>
+            </div>
+        </div>
+        
+        <div class="legend-container">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <span class="color-line" style="background: #1565a0;"></span>
+                <span>Cycling Route</span>
+            </div>
+            <div class="legend-item">
+                <span class="color-line" style="background: #c93d2a;"></span>
+                <span>Walking Route</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <p>Hover over a route to highlight it.</p>
+            <p>Click on any route for detailed information.</p>
+        </div>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="app.js"></script>
+</body>
+</html>

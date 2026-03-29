@@ -1,13 +1,17 @@
 :root {
-    --bg-dark: #0f111a;
-    --panel-bg: rgba(15, 17, 26, 0.75);
-    --border-color: rgba(255, 255, 255, 0.1);
-    --text-primary: #e2e8f0;
-    --text-secondary: #94a3b8;
-    --accent-cyan: #00f2fe;
-    --accent-blue: #4facfe;
-    --neon-glow: 0 0 10px rgba(0, 242, 254, 0.5);
-    --blur-strength: 16px;
+    /* Pittsburgh Bike Map inspired palette */
+    --bg-cream: #f5f0e3;
+    --panel-bg: rgba(245, 240, 227, 0.92);
+    --border-color: rgba(139, 119, 85, 0.25);
+    --text-primary: #2c2a26;
+    --text-secondary: #6b6355;
+    --accent-blue: #1565a0;
+    --accent-blue-light: #4d96cc;
+    --accent-red: #c93d2a;
+    --accent-green: #7a9e3e;
+    --accent-teal: #2a8b8b;
+    --panel-shadow: 0 4px 24px rgba(44, 42, 38, 0.15);
+    --blur-strength: 12px;
 }
 
 * {
@@ -20,7 +24,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-cream);
     color: var(--text-primary);
     overflow: hidden;
     height: 100vh;
@@ -35,54 +39,117 @@ body {
     z-index: 1;
 }
 
+/* ── Sidebar Panel ───────────────────────────────── */
+
 .glass-panel {
     background: var(--panel-bg);
     backdrop-filter: blur(var(--blur-strength));
     -webkit-backdrop-filter: blur(var(--blur-strength));
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    box-shadow: var(--panel-shadow);
 }
 
 .sidebar {
     position: absolute;
-    top: 24px;
-    left: 24px;
-    width: 340px;
-    padding: 24px;
+    top: 20px;
+    left: 20px;
+    width: 320px;
+    padding: 20px 22px;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    transition: transform 0.3s ease;
+    gap: 18px;
+    transition: transform 0.35s ease, opacity 0.35s ease;
 }
 
+.sidebar.hidden {
+    transform: translateX(-360px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Close button */
+.sidebar-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 26px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    z-index: 3;
+}
+
+.sidebar-close:hover {
+    background: var(--accent-red);
+    color: #fff;
+    border-color: var(--accent-red);
+}
+
+/* Re-open toggle button (visible when sidebar is hidden) */
+.sidebar-toggle {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--panel-bg);
+    backdrop-filter: blur(var(--blur-strength));
+    box-shadow: var(--panel-shadow);
+    color: var(--accent-blue);
+    font-size: 20px;
+    cursor: pointer;
+    display: none;            /* shown via JS */
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--accent-blue);
+    color: #fff;
+}
+
+/* ── Header ──────────────────────────────────────── */
+
 .sidebar-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 4px;
+    color: var(--accent-blue);
+    margin-bottom: 2px;
+    padding-right: 30px; /* room for × button */
 }
 
 .sidebar-header .subtitle {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     font-weight: 400;
 }
 
+/* ── Stats ───────────────────────────────────────── */
+
 .stats-container {
     display: flex;
-    gap: 16px;
+    gap: 12px;
 }
 
 .stat-box {
     flex: 1;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.55);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 16px;
+    padding: 14px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -90,66 +157,72 @@ body {
 }
 
 .stat-value {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 4px;
+    color: var(--accent-blue);
+    margin-bottom: 3px;
 }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--text-secondary);
+    font-weight: 500;
 }
 
+/* ── Legend ───────────────────────────────────────── */
+
 .legend-container h3 {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-    font-size: 0.875rem;
+    gap: 10px;
+    margin-bottom: 7px;
+    font-size: 0.82rem;
     color: var(--text-secondary);
 }
 
 .color-line {
     width: 32px;
-    height: 4px;
-    border-radius: 2px;
-    box-shadow: var(--neon-glow);
+    height: 5px;
+    border-radius: 3px;
 }
+
+/* ── Instructions ────────────────────────────────── */
 
 .instructions {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.45);
     border-radius: 8px;
-    padding: 12px;
-    font-size: 0.8rem;
+    padding: 10px 12px;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
-/* Custom MapLibre Popup Styles */
+/* ── MapLibre Popup Styles ───────────────────────── */
+
 .maplibregl-popup {
     z-index: 10;
 }
+
 .maplibregl-popup-content {
     background: var(--panel-bg);
     backdrop-filter: blur(var(--blur-strength));
     -webkit-backdrop-filter: blur(var(--blur-strength));
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 14px 16px;
     color: var(--text-primary);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    box-shadow: var(--panel-shadow);
 }
 
 .maplibregl-popup-tip {
@@ -164,24 +237,41 @@ body {
 
 .maplibregl-popup-close-button:hover {
     background-color: transparent;
-    color: var(--text-primary);
+    color: var(--accent-red);
 }
 
 .popup-title {
     font-weight: 600;
     font-size: 1rem;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     padding-right: 16px;
-    color: var(--accent-cyan);
+    color: var(--accent-blue);
 }
 
 .popup-detail {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .popup-detail span {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-primary);
+}
+
+/* ── MapLibre native controls (match palette) ───── */
+
+.maplibregl-ctrl-group {
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--panel-shadow) !important;
+    border-radius: 8px !important;
+}
+
+.maplibregl-ctrl-group button {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.maplibregl-ctrl-group button:last-child {
+    border-bottom: none !important;
 }
