@@ -12,6 +12,9 @@
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 
+    <!-- Turf.js for Spatial Calculations -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +43,7 @@
         <div class="sidebar-header">
             <img src="logo.png" alt="Commute Initiatives | Bike Commute Malaysia" class="sidebar-logo">
             <h1>COMMUTE Map</h1>
-            <p class="subtitle">Community Open-sourced Mobility Map for Urban Transport for Everyone</p>
+            <p class="subtitle">Community Open-Sourced Mobilty Map for Urban Transport for Everyone</p>
         </div>
 
         <div class="stats-container">
@@ -61,6 +64,16 @@
                 <button class="viz-btn active" id="viz-type" title="Color routes by transport type">By Type</button>
                 <button class="viz-btn" id="viz-contributor" title="Color routes by contributor">By Contributor</button>
                 <button class="viz-btn" id="viz-distance" title="Color routes by distance">By Distance</button>
+            </div>
+            
+            <div class="layer-toggle-row">
+                <label class="switch-label">
+                    <span>Show Public Transit <small>(MRT, LRT, KTM)</small></span>
+                    <div class="switch">
+                        <input type="checkbox" id="toggle-transit" checked>
+                        <span class="slider round"></span>
+                    </div>
+                </label>
             </div>
         </div>
 
@@ -83,6 +96,12 @@
             <div class="gradient-labels">
                 <span id="dist-min">0 km</span>
                 <span id="dist-max">— km</span>
+            </div>
+            
+            <div class="distance-filter">
+                <label for="dist-category-slider">Filter by Distance:</label>
+                <input type="range" id="dist-category-slider" min="0" max="3" step="1" value="0">
+                <div id="dist-category-label" class="dist-category-label">All Routes</div>
             </div>
         </div>
 
