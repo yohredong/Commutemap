@@ -48,15 +48,34 @@ def process_file(file_path):
 
     gdf = gdf.rename(columns=col_map)
 
-    # Build a clean 'name' column
-    if 'name' not in gdf.columns:
-        gdf['name'] = "Unnamed Route"
-    gdf['name'] = gdf['name'].fillna("Unnamed Route")
+    # ── Extract contributor name from various column names ──
+    contributor_col = None
+    for col in gdf.columns:
+        lower = col.lower().strip()
+        if 'full name' in lower:
+            contributor_col = col
+            break
+    if contributor_col:
+        gdf['contributor'] = gdf[contributor_col].fillna('Anonymous')
+    else:
+        gdf['contributor'] = 'Anonymous'
+
+    # ── Build a clean 'name' (ride name) column ──
+    # Prefer 'Ride Name' if it exists, else fall back to 'name'
+    if 'Ride Name' in gdf.columns:
+        gdf['name'] = gdf['Ride Name'].fillna('Unnamed Route')
+    elif 'name' in gdf.columns:
+        gdf['name'] = gdf['name'].fillna('Unnamed Route')
+    else:
+        gdf['name'] = 'Unnamed Route'
 
     # Build a 'type' column
-    if 'type' not in gdf.columns:
-        gdf['type'] = "cycling"
-    gdf['type'] = gdf['type'].fillna("cycling")
+    if 'Mode of Transport' in gdf.columns:
+        gdf['type'] = gdf['Mode of Transport'].fillna('cycling').str.lower()
+    elif 'type' not in gdf.columns:
+        gdf['type'] = 'cycling'
+    else:
+        gdf['type'] = gdf['type'].fillna('cycling')
 
     # Calculate distance if missing
     if 'distance_km' not in gdf.columns:
@@ -65,9 +84,8 @@ def process_file(file_path):
     else:
         gdf['distance_km'] = pd.to_numeric(gdf['distance_km'], errors='coerce').fillna(0)
 
-    # Keep only safe, non-PII columns
-    safe_cols = ['name', 'type', 'distance_km', 'geometry']
-    # Also keep travel_time_min and avg_speed_kmh if present
+    # Keep columns for the web map (contributor is public per user request)
+    safe_cols = ['name', 'contributor', 'type', 'distance_km', 'geometry']
     for extra in ['travel_time_min', 'avg_speed_kmh']:
         if extra in gdf.columns:
             safe_cols.append(extra)

@@ -1,26 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KL Bicycle Commuting Map</title>
-    <meta name="description" content="Interactive map of community-submitted bicycle commuting routes across Kuala Lumpur.">
-    
+    <meta name="description"
+        content="Interactive map of community-submitted bicycle commuting routes across Kuala Lumpur.">
+
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="map"></div>
-    
+
+    <!-- Floating Add Route button -->
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdQF0kyOMpWGlnbEVZ12jUBt34wsPQgk2UikykW9fqlOnF5fg/viewform?usp=header"
+        target="_blank" rel="noopener noreferrer" class="fab-add" id="fab-add" title="Submit your cycling route">
+        <span class="fab-icon">+</span>
+        <span class="fab-label">Add Route</span>
+    </a>
     <!-- Re-open sidebar button (hidden by default, shown when sidebar is closed) -->
     <button class="sidebar-toggle" id="sidebar-toggle" title="Show info panel">☰</button>
 
@@ -29,10 +38,11 @@
         <button class="sidebar-close" id="sidebar-close" title="Close panel">✕</button>
 
         <div class="sidebar-header">
-            <h1>KL Bicycle Commuting Map</h1>
-            <p class="subtitle">Community Submitted Routes</p>
+            <img src="logo.png" alt="Commute Initiatives | Bike Commute Malaysia" class="sidebar-logo">
+            <h1>COMMUTE Map</h1>
+            <p class="subtitle">Community Open-Sourced Micro-mobility Urban Transport for Everyone</p>
         </div>
-        
+
         <div class="stats-container">
             <div class="stat-box">
                 <span class="stat-value" id="total-routes">–</span>
@@ -43,16 +53,36 @@
                 <span class="stat-label">Total KM</span>
             </div>
         </div>
-        
-        <div class="legend-container">
-            <h3>Legend</h3>
-            <div class="legend-item">
-                <span class="color-line" style="background: #1565a0;"></span>
-                <span>Cycling Route</span>
+
+        <!-- Visualization toggle -->
+        <div class="viz-toggle-container">
+            <h3>Visualization</h3>
+            <div class="viz-toggle-group">
+                <button class="viz-btn active" id="viz-type" title="Color routes by transport type">By Type</button>
+                <button class="viz-btn" id="viz-contributor" title="Color routes by contributor">By Contributor</button>
+                <button class="viz-btn" id="viz-distance" title="Color routes by distance">By Distance</button>
             </div>
-            <div class="legend-item">
-                <span class="color-line" style="background: #c93d2a;"></span>
-                <span>Walking Route</span>
+        </div>
+
+        <!-- Legend: By Type (default, visible) -->
+        <div class="legend-container" id="legend-type">
+            <h3>Legend — Transport Type</h3>
+            <div id="type-legend-items"></div>
+        </div>
+
+        <!-- Legend: By Contributor (hidden by default) -->
+        <div class="legend-container" id="legend-contributor" style="display: none;">
+            <h3>Legend — Contributors</h3>
+            <div id="contributor-legend-items"></div>
+        </div>
+
+        <!-- Legend: By Distance (hidden by default) -->
+        <div class="legend-container" id="legend-distance" style="display: none;">
+            <h3>Legend — Distance</h3>
+            <div class="gradient-bar"></div>
+            <div class="gradient-labels">
+                <span id="dist-min">0 km</span>
+                <span id="dist-max">— km</span>
             </div>
         </div>
 
@@ -65,4 +95,5 @@
     <!-- Custom Script -->
     <script src="app.js"></script>
 </body>
+
 </html>
