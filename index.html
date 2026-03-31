@@ -26,6 +26,8 @@
 
 <body>
     <div id="map"></div>
+    <!-- Route selection overlay -->
+    <div id="route-overlay"></div>
 
     <!-- Floating Add Route button -->
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSdQF0kyOMpWGlnbEVZ12jUBt34wsPQgk2UikykW9fqlOnF5fg/viewform?usp=header"
@@ -35,6 +37,44 @@
     </a>
     <!-- Re-open sidebar button (hidden by default, shown when sidebar is closed) -->
     <button class="sidebar-toggle" id="sidebar-toggle" title="Show info panel">☰</button>
+
+    <!-- Route Detail Panel (slides in from right on desktop when a route is clicked) -->
+    <div class="route-detail-panel glass-panel" id="route-detail-panel" aria-hidden="true">
+        <button class="route-detail-close" id="route-detail-close" title="Close route details">✕</button>
+        <div class="route-detail-inner">
+            <div class="route-detail-color-bar" id="route-detail-color-bar"></div>
+            <div class="route-detail-header">
+                <span class="route-detail-badge" id="route-detail-badge">Route</span>
+                <h2 class="route-detail-title" id="route-detail-title">–</h2>
+            </div>
+            <div class="route-detail-stats" id="route-detail-stats">
+                <div class="route-stat-item">
+                    <span class="route-stat-icon">📏</span>
+                    <div>
+                        <span class="route-stat-value" id="rd-distance">–</span>
+                        <span class="route-stat-label">Distance</span>
+                    </div>
+                </div>
+                <div class="route-stat-item">
+                    <span class="route-stat-icon">⏱</span>
+                    <div>
+                        <span class="route-stat-value" id="rd-time">–</span>
+                        <span class="route-stat-label">Travel Time</span>
+                    </div>
+                </div>
+                <div class="route-stat-item">
+                    <span class="route-stat-icon">⚡</span>
+                    <div>
+                        <span class="route-stat-value" id="rd-speed">–</span>
+                        <span class="route-stat-label">Avg Speed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="route-detail-fields" id="route-detail-fields">
+                <!-- Additional fields injected by JS -->
+            </div>
+        </div>
+    </div>
 
     <div class="glass-panel sidebar" id="sidebar">
         <!-- Close button -->
@@ -112,7 +152,7 @@
     </div>
 
     <!-- Custom Script -->
-    <script src="app.js"></script>
+    <script src="app.js?v=se_endpoints_01"></script>
 </body>
 
 </html>
