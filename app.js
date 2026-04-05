@@ -245,6 +245,7 @@ map.on('load', () => {
         if (!map.hasImage('train-station-icon')) {
             map.addImage('train-station-icon', img);
         }
+        // Icon layer — collision detection ON so icons sit side-by-side instead of stacking
         map.addLayer({
             id: 'transit-station-icons',
             type: 'symbol',
@@ -254,9 +255,27 @@ map.on('load', () => {
             layout: {
                 'visibility': 'visible',
                 'icon-image': 'train-station-icon',
-                'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.022, 15, 0.042],
-                'icon-allow-overlap': true,
-                'icon-ignore-placement': true
+                'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.020, 13, 0.030, 15, 0.042],
+                // Collision detection ON: icons sit adjacent, not stacked.
+                // Icons that can't fit at the current zoom are deferred until you zoom in.
+                'icon-padding': 10,
+                'symbol-spacing': 16,
+
+                // Station name labels appear at zoom ≥ 13
+                'text-field': ['step', ['zoom'], '', 13, ['coalesce', ['get', 'name'], '']],
+                'text-font': ['Open Sans SemiBold', 'Arial Unicode MS Bold'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 12],
+                'text-anchor': 'top',
+                'text-offset': [0, 1.6],
+                'text-max-width': 8,
+                'text-padding': 4,
+                'text-allow-overlap': false,
+                'text-optional': true
+            },
+            paint: {
+                'text-color': '#2c3e50',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1.5
             }
         }, 'routes-halo');
     });
@@ -551,7 +570,8 @@ map.on('load', () => {
         source: 'isolation-bg',
         paint: {
             'fill-color': '#ffffff',
-            'fill-opacity': 0  // hidden by default, activated on route click
+            'fill-opacity': 0,  // hidden by default, activated on route hover/click
+            'fill-opacity-transition': { duration: 0, delay: 0 }  // instant — no fade delay
         }
     });
 
