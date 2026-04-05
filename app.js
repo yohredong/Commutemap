@@ -525,6 +525,20 @@ map.on('load', () => {
         }
     });
 
+    // Layer 2b: Invisible wide touch-target layer — makes routes easy to tap on mobile
+    // Visually transparent (opacity 0) but intercepts pointer events over a ~20px band
+    map.addLayer({
+        id: 'routes-touch',
+        type: 'line',
+        source: 'commute-routes',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+            'line-color': '#000000',
+            'line-width': 20,
+            'line-opacity': 0
+        }
+    });
+
     // Layer 3: Selected route highlight — moved above isolation-bg on click
     map.addLayer({
         id: 'selected-route',
@@ -655,8 +669,8 @@ map.on('load', () => {
         })
         .catch(err => console.error("Could not load GeoJSON:", err));
 
-    // ── Hover interaction ──
-    map.on('mousemove', 'routes-core', (e) => {
+    // ── Hover interaction (core + touch layer) ──
+    const handleRouteHoverEnter = (e) => {
         map.getCanvas().style.cursor = 'pointer';
         if (e.features.length > 0) {
             if (hoveredRunId !== null) {
@@ -665,15 +679,19 @@ map.on('load', () => {
             hoveredRunId = e.features[0].id;
             map.setFeatureState({ source: 'commute-routes', id: hoveredRunId }, { hover: true });
         }
-    });
-
-    map.on('mouseleave', 'routes-core', () => {
+    };
+    const handleRouteHoverLeave = () => {
         map.getCanvas().style.cursor = '';
         if (hoveredRunId !== null) {
             map.setFeatureState({ source: 'commute-routes', id: hoveredRunId }, { hover: false });
         }
         hoveredRunId = null;
-    });
+    };
+
+    map.on('mousemove',  'routes-core',  handleRouteHoverEnter);
+    map.on('mouseleave', 'routes-core',  handleRouteHoverLeave);
+    map.on('mousemove',  'routes-touch', handleRouteHoverEnter);
+    map.on('mouseleave', 'routes-touch', handleRouteHoverLeave);
 
     // ── Route click state ──
     const routeOverlay  = document.getElementById('route-overlay');
@@ -818,8 +836,8 @@ map.on('load', () => {
         if (!e.defaultPrevented) closeDetailPanel();
     });
 
-    // ── Click on route → detail panel + highlight ──
-    map.on('click', 'routes-core', (e) => {
+    // ── Click on route → detail panel + highlight (core + touch layer) ──
+    const handleRouteClick = (e) => {
         e.preventDefault();
         if (e.features.length > 0) {
             const feature    = e.features[0];
@@ -846,7 +864,10 @@ map.on('load', () => {
 
             openDetailPanel(props, routeColor);
         }
-    });
+    };
+
+    map.on('click', 'routes-core',  handleRouteClick);
+    map.on('click', 'routes-touch', handleRouteClick);
 });
 
 // ─── Toggle button event listeners ──────────────
@@ -911,8 +932,9 @@ function updateAllFilters() {
 
     // 4. Inject strict array expression into MapLibre pipeline
     const finalFilter = filters.length > 1 ? filters : null;
-    if (map.getLayer('routes-halo')) map.setFilter('routes-halo', finalFilter);
-    if (map.getLayer('routes-core')) map.setFilter('routes-core', finalFilter);
+    if (map.getLayer('routes-halo'))  map.setFilter('routes-halo',  finalFilter);
+    if (map.getLayer('routes-core'))  map.setFilter('routes-core',  finalFilter);
+    if (map.getLayer('routes-touch')) map.setFilter('routes-touch', finalFilter);
 }
 
 // Attach universally
