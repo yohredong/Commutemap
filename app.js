@@ -708,6 +708,8 @@ map.on('load', () => {
         const speed       = props.average_speed_kmh
                             ? parseFloat(props.average_speed_kmh).toFixed(1) + ' km/h' : 'N/A';
         const tType       = props.type || 'Unknown';
+        const sourceType  = props['Source'] || '';
+        const sourceLink  = props['Source Link'] || '';
 
         // Accent color bar + badge
         document.getElementById('route-detail-color-bar').style.background = routeColor;
@@ -723,18 +725,35 @@ map.on('load', () => {
         document.getElementById('rd-time').textContent     = time;
         document.getElementById('rd-speed').textContent    = speed;
 
-        // Extra field rows (add more here as new fields are added)
+        // Build source link button if available
+        let sourceLinkHTML = '';
+        if (sourceLink && sourceType !== 'Uploaded GPX (Drive)') {
+            const isStrava  = sourceType.toLowerCase().includes('strava');
+            const isKomoot  = sourceType.toLowerCase().includes('komoot');
+            const icon  = isStrava ? '🟠' : isKomoot ? '🟢' : '🔗';
+            const label = isStrava ? 'View on Strava' : isKomoot ? 'View on Komoot' : 'View Route';
+            // Sanitise URL to prevent XSS
+            const safeHref = encodeURI(sourceLink).replace(/["'<>]/g, '');
+            sourceLinkHTML = `
+                <a class="route-source-link" href="${safeHref}" target="_blank" rel="noopener noreferrer"
+                   style="--link-color:${routeColor}">
+                    <span class="route-source-icon">${icon}</span>
+                    <span>${label}</span>
+                    <span class="route-source-arrow">↗</span>
+                </a>`;
+        }
+
+        // Extra field rows
         const fields = [
             { label: 'Contributor', value: contributor },
             { label: 'Transport',   value: tType },
         ];
-        document.getElementById('route-detail-fields').innerHTML = fields
-            .map(f => `
+        document.getElementById('route-detail-fields').innerHTML =
+            fields.map(f => `
                 <div class="route-field-row">
                     <span class="route-field-label">${f.label}</span>
                     <span class="route-field-value">${f.value}</span>
-                </div>`)
-            .join('');
+                </div>`).join('') + sourceLinkHTML;
 
         detailPanel.classList.add('open');
         detailPanel.setAttribute('aria-hidden', 'false');
