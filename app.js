@@ -15,6 +15,22 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right');
 
+// ─── Zoom to user location on load ───────────────
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            map.flyTo({
+                center: [pos.coords.longitude, pos.coords.latitude],
+                zoom: 13,
+                speed: 1.2,
+                essential: true
+            });
+        },
+        () => { /* silently fall back to default KL centre */ },
+        { enableHighAccuracy: false, timeout: 6000 }
+    );
+}
+
 // ─── Sidebar open / close ───────────────────────
 const sidebar   = document.getElementById('sidebar');
 const closeBtn  = document.getElementById('sidebar-close');
@@ -697,6 +713,7 @@ map.on('load', () => {
         }
     }
 
+
     function openDetailPanel(props, routeColor) {
         const rideName    = props.name         || 'Unnamed Route';
         const contributor = (props.contributor && props.contributor !== 'Anonymous')
@@ -881,3 +898,238 @@ document.getElementById('sidebar').addEventListener('change', (e) => {
         updateAllFilters();
     }
 });
+
+// ─── Near Me Feature ──────────────────────────────────────────────────
+(function setupNearMe() {
+    const NEAR_RADIUS_KM = 3; // matches the outermost concentric ring (3 km)
+    const btn = document.getElementById('fab-near-me');
+    if (!btn) return;
+
+    let userMarker   = null;
+    let nearMeActive = false;
+
+    // Add concentric ring layers (same structure as transit station rings, orange)
+    let nearMeRingAnimId = null;
+
+    function addNearMeLayers() {
+        if (map.getSource('near-me-rings')) return; // already added
+        map.addSource('near-me-rings', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+
+        // Subtle orange fill inside each ring
+        map.addLayer({
+            id: 'near-me-rings-fill',
+            type: 'fill',
+            source: 'near-me-rings',
+            layout: {},
+            paint: {
+                'fill-color': '#e67e22',
+                'fill-opacity': 0.05
+            }
+        });
+
+        // Dashed orange ring outline
+        map.addLayer({
+            id: 'near-me-rings-line',
+            type: 'line',
+            source: 'near-me-rings',
+            layout: {},
+            paint: {
+                'line-color': '#e67e22',
+                'line-width': 1.5,
+                'line-dasharray': [2, 2],
+                'line-opacity': 0.7
+            }
+        });
+
+        // Arc labels along each ring line
+        map.addLayer({
+            id: 'near-me-rings-label',
+            type: 'symbol',
+            source: 'near-me-rings',
+            filter: ['==', ['geometry-type'], 'LineString'],
+            minzoom: 11,
+            layout: {
+                'text-field': ['get', 'label'],
+                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 15, 12],
+                'symbol-placement': 'line',
+                'text-anchor': 'bottom',
+                'text-offset': [0, 0.5],
+                'text-padding': 2,
+                'text-max-angle': 360,
+                'text-keep-upright': true
+            },
+            paint: {
+                'text-color': '#c0530a',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1.5
+            }
+        });
+    }
+
+    function animateNearMeRings(coords) {
+        if (nearMeRingAnimId) cancelAnimationFrame(nearMeRingAnimId);
+
+        const startTime = performance.now();
+        const duration  = 500;
+
+        function frame(time) {
+            let progress = (time - startTime) / duration;
+            if (progress > 1) progress = 1;
+
+            const ease = 1 - Math.pow(1 - progress, 3);
+
+            const r1 = Math.max(0.001, 0.4 * ease);  // 400 m
+            const r2 = Math.max(0.001, 1.0 * ease);  // 1 km
+            const r3 = Math.max(0.001, 3.0 * ease);  // 3 km
+
+            try {
+                const poly3km  = turf.circle(coords, r3, { steps: 64 });
+                const poly1km  = turf.circle(coords, r2, { steps: 64 });
+                const poly400m = turf.circle(coords, r1, { steps: 64 });
+
+                const line3km  = turf.polygonToLine(poly3km);
+                const line1km  = turf.polygonToLine(poly1km);
+                const line400m = turf.polygonToLine(poly400m);
+
+                line3km.properties.label  = progress > 0.3 ? '15 minutes by bike' : '';
+                line1km.properties.label  = progress > 0.3 ? '5 minutes by bike'  : '';
+                line400m.properties.label = progress > 0.3 ? '5 minute walk'       : '';
+
+                map.getSource('near-me-rings').setData(turf.featureCollection([
+                    poly3km, poly1km, poly400m,
+                    line3km, line1km, line400m
+                ]));
+            } catch (err) { /* skip sub-mm interpolation errors */ }
+
+            if (progress < 1) nearMeRingAnimId = requestAnimationFrame(frame);
+            else nearMeRingAnimId = null;
+        }
+
+        nearMeRingAnimId = requestAnimationFrame(frame);
+    }
+
+    if (map.loaded()) {
+        addNearMeLayers();
+    } else {
+        map.on('load', addNearMeLayers);
+    }
+
+    function clearNearMe() {
+        nearMeActive = false;
+        btn.classList.remove('active', 'locating', 'error');
+        btn.querySelector('.fab-near-me-label').textContent = 'Near Me';
+        btn.querySelector('.fab-near-me-icon').textContent  = '📍';
+
+        if (userMarker) { userMarker.remove(); userMarker = null; }
+
+        if (nearMeRingAnimId) { cancelAnimationFrame(nearMeRingAnimId); nearMeRingAnimId = null; }
+        if (map.getSource('near-me-rings')) {
+            map.getSource('near-me-rings').setData({ type: 'FeatureCollection', features: [] });
+        }
+
+        // Remove the proximity filter — defer to the normal slider/checkbox filters
+        updateAllFilters();
+    }
+
+    function applyNearMeFilter(userCoords) {
+        fetch('data/routes.geojson')
+            .then(r => r.json())
+            .then(geoData => {
+                const userPt = turf.point(userCoords);
+                const nearbyNames = [];
+
+                geoData.features.forEach(f => {
+                    const centroid = turf.centroid(f);
+                    const dist = turf.distance(userPt, centroid, { units: 'kilometers' });
+                    if (dist <= NEAR_RADIUS_KM) {
+                        const name = f.properties.name || '';
+                        if (name) nearbyNames.push(name);
+                    }
+                });
+
+                if (nearbyNames.length === 0) {
+                    const hideAll = ['==', '1', '2'];
+                    if (map.getLayer('routes-halo')) map.setFilter('routes-halo', hideAll);
+                    if (map.getLayer('routes-core')) map.setFilter('routes-core', hideAll);
+                    return;
+                }
+
+                const nearFilter = ['in', ['coalesce', ['get', 'name'], ''], ['literal', nearbyNames]];
+                if (map.getLayer('routes-halo')) map.setFilter('routes-halo', nearFilter);
+                if (map.getLayer('routes-core')) map.setFilter('routes-core', nearFilter);
+            })
+            .catch(err => console.warn('Near Me filter error:', err));
+    }
+
+    btn.addEventListener('click', () => {
+        if (nearMeActive) { clearNearMe(); return; }
+
+        if (!navigator.geolocation) {
+            btn.classList.add('error');
+            btn.querySelector('.fab-near-me-label').textContent = 'Not supported';
+            setTimeout(() => {
+                btn.classList.remove('error');
+                btn.querySelector('.fab-near-me-label').textContent = 'Near Me';
+            }, 2500);
+            return;
+        }
+
+        // Locating state
+        btn.classList.add('locating');
+        btn.querySelector('.fab-near-me-label').textContent = 'Locating…';
+        btn.querySelector('.fab-near-me-icon').textContent  = '⏳';
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { longitude, latitude } = pos.coords;
+                const userCoords = [longitude, latitude];
+
+                // Drop an orange user-location dot marker
+                const el = document.createElement('div');
+                el.style.cssText = [
+                    'width:18px', 'height:18px', 'border-radius:50%',
+                    'background:#e67e22', 'border:3px solid #fff',
+                    'box-shadow:0 0 0 4px rgba(230,126,34,0.30)',
+                    'cursor:default'
+                ].join(';');
+
+                if (userMarker) userMarker.remove();
+                userMarker = new maplibregl.Marker({ element: el })
+                    .setLngLat(userCoords)
+                    .addTo(map);
+
+                // Animate concentric rings: 400m / 1 km / 3 km
+                animateNearMeRings(userCoords);
+
+                // Fly to location and apply the proximity filter
+                map.flyTo({ center: userCoords, zoom: 13, speed: 1.4 });
+                applyNearMeFilter(userCoords);
+
+                // Active state
+                nearMeActive = true;
+                btn.classList.remove('locating');
+                btn.classList.add('active');
+                btn.querySelector('.fab-near-me-label').textContent = 'Near Me ✓';
+                btn.querySelector('.fab-near-me-icon').textContent  = '📍';
+            },
+            (err) => {
+                console.warn('Geolocation error:', err);
+                btn.classList.remove('locating');
+                btn.classList.add('error');
+                btn.querySelector('.fab-near-me-label').textContent =
+                    err.code === 1 ? 'Access denied' : 'Location error';
+                btn.querySelector('.fab-near-me-icon').textContent = '⚠️';
+                setTimeout(() => {
+                    btn.classList.remove('error');
+                    btn.querySelector('.fab-near-me-label').textContent = 'Near Me';
+                    btn.querySelector('.fab-near-me-icon').textContent  = '📍';
+                }, 3000);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+}());
