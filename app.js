@@ -12,6 +12,33 @@ const map = new maplibregl.Map({
     antialias: true
 });
 
+// ─── Mobile fullscreen: keep map canvas in sync with visible viewport ───
+// iOS Safari reports window.innerHeight incorrectly on load (includes browser chrome).
+// visualViewport fires when the chrome slides away; window resize fires on orientation change.
+(function fixMobileFullscreen() {
+    let resizeTimer;
+    function onViewportChange() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // Force MapLibre to recalculate canvas size against real visible area
+            map.resize();
+        }, 100);
+    }
+
+    // visualViewport API — fires when iOS chrome collapses/expands
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onViewportChange);
+        window.visualViewport.addEventListener('scroll', onViewportChange);
+    }
+
+    // Fallback: standard resize (orientation changes, desktop resize)
+    window.addEventListener('resize', onViewportChange);
+
+    // Also flush once the map is fully loaded to catch any initial chrome mismatch
+    map.once('load', () => { map.resize(); });
+}());
+
+
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right');
 
@@ -325,6 +352,40 @@ map.on('load', () => {
         paint: { 'text-color': '#ffffff' }
     });
 
+    // ── Hover Preview Layers (desktop only, lighter effect) ──
+    map.addSource('hover-route-meta', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+    });
+
+    map.addLayer({
+        id: 'hover-route-endpoints',
+        type: 'circle',
+        source: 'hover-route-meta',
+        filter: ['in', ['get', 'type'], ['literal', ['start', 'end']]],
+        paint: {
+            'circle-radius': 8,
+            'circle-color': ['get', 'routeColor'],
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2
+        }
+    });
+
+    map.addLayer({
+        id: 'hover-route-endpoint-labels',
+        type: 'symbol',
+        source: 'hover-route-meta',
+        filter: ['in', ['get', 'type'], ['literal', ['start', 'end']]],
+        layout: {
+            'text-field': ['get', 'label'],
+            'text-size': 10,
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-allow-overlap': true,
+            'text-ignore-placement': true
+        },
+        paint: { 'text-color': '#ffffff' }
+    });
+
     // 2. Midpoint Transport Icon (Emoji)
     map.addLayer({
         id: 'active-route-midpoint',
@@ -553,7 +614,21 @@ map.on('load', () => {
         }
     });
 
-// ── Compute stats, gradients, and contributor colors ──
+    // Layer 3b: Hovered route highlight — updated on mousemove (desktop)
+    map.addLayer({
+        id: 'hover-route-highlight',
+        type: 'line',
+        source: 'commute-routes',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        filter: ['==', ['id'], ''],  // starts empty, set dynamically on hover
+        paint: {
+            'line-color': colorByType,
+            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 6, 15, 10],
+            'line-opacity': 1.0
+        }
+    });
+
+
     fetch('data/routes.geojson' + cacheBust)
         .then(res => res.json())
         .then(data => {
@@ -670,6 +745,9 @@ map.on('load', () => {
         .catch(err => console.error("Could not load GeoJSON:", err));
 
     // ── Hover interaction (core + touch layer) ──
+    // isDesktop: true for mouse/trackpad devices that support CSS :hover
+    const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     const handleRouteHoverEnter = (e) => {
         map.getCanvas().style.cursor = 'pointer';
         if (e.features.length > 0) {
@@ -678,14 +756,65 @@ map.on('load', () => {
             }
             hoveredRunId = e.features[0].id;
             map.setFeatureState({ source: 'commute-routes', id: hoveredRunId }, { hover: true });
+
+            // Desktop-only: highlight line + S/E markers + light overlay
+            if (isDesktop) {
+                const f = e.features[0];
+                const hoverColor = resolveFeatureColor(f.properties);
+
+                // 1. Highlight the hovered route above the white fill
+                if (map.getLayer('hover-route-highlight')) {
+                    map.setFilter('hover-route-highlight', ['==', ['id'], hoveredRunId]);
+                }
+
+                // 2. Compute and place S/E markers
+                let coords = f.geometry.coordinates;
+                if (f.geometry.type === 'MultiLineString') {
+                    coords = coords.reduce((acc, val) => acc.concat(val), []);
+                }
+                try {
+                    const ls      = turf.lineString(coords);
+                    const lineLen = turf.length(ls, { units: 'meters' });
+                    const startPt = turf.along(ls, 0, { units: 'meters' });
+                    const endPt   = turf.along(ls, lineLen, { units: 'meters' });
+                    startPt.properties = { type: 'start', label: 'S', routeColor: hoverColor };
+                    endPt.properties   = { type: 'end',   label: 'E', routeColor: hoverColor };
+                    map.getSource('hover-route-meta').setData(turf.featureCollection([startPt, endPt]));
+                } catch(err) {}
+
+                // 3. Show lighter overlay only when no route is already selected
+                if (selectedFeatureId === null) {
+                    map.setPaintProperty('route-isolation-bg', 'fill-opacity', 0.40);
+                    if (map.getLayer('route-isolation-bg'))    map.moveLayer('route-isolation-bg');
+                    if (map.getLayer('hover-route-highlight')) map.moveLayer('hover-route-highlight');
+                }
+                // 4. Bring S/E markers to top
+                if (map.getLayer('hover-route-endpoints'))       map.moveLayer('hover-route-endpoints');
+                if (map.getLayer('hover-route-endpoint-labels')) map.moveLayer('hover-route-endpoint-labels');
+            }
         }
     };
+
     const handleRouteHoverLeave = () => {
         map.getCanvas().style.cursor = '';
         if (hoveredRunId !== null) {
             map.setFeatureState({ source: 'commute-routes', id: hoveredRunId }, { hover: false });
         }
         hoveredRunId = null;
+
+        // Desktop: clear hover highlight, markers and reset overlay (unless a route is selected)
+        if (isDesktop) {
+            // Reset hovered route highlight filter to show nothing
+            if (map.getLayer('hover-route-highlight')) {
+                map.setFilter('hover-route-highlight', ['==', ['id'], '']);
+            }
+            if (map.getSource('hover-route-meta')) {
+                map.getSource('hover-route-meta').setData({ type: 'FeatureCollection', features: [] });
+            }
+            if (selectedFeatureId === null) {
+                map.setPaintProperty('route-isolation-bg', 'fill-opacity', 0);
+            }
+        }
     };
 
     map.on('mousemove',  'routes-core',  handleRouteHoverEnter);

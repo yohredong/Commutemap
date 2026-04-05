@@ -27,15 +27,24 @@ body {
     background-color: var(--bg-cream);
     color: var(--text-primary);
     overflow: hidden;
+    /* 100dvh = dynamic viewport height: shrinks when browser chrome appears on mobile.
+       Fallback to 100vh for older browsers. */
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
+    width: 100dvw;
 }
 
 #map {
     position: absolute;
     top: 0;
+    left: 0;
+    right: 0;
     bottom: 0;
     width: 100%;
+    /* Explicit height fallback for browsers that don't fully support dvh */
+    height: 100vh;
+    height: 100dvh;
     z-index: 1;
 }
 
