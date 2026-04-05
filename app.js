@@ -194,7 +194,7 @@ map.on('load', () => {
         }
     });
 
-    // Layer 0.5: Transit Stations
+    // Layer 0.5: Transit Stations (coloured circle background)
     map.addLayer({
         id: 'transit-stations',
         type: 'circle',
@@ -204,12 +204,34 @@ map.on('load', () => {
             'visibility': 'visible'
         },
         paint: {
-            'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 15, 6],
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 7, 15, 13],
             'circle-color': getTransitColor,
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1.5,
             'circle-opacity': 0.9
         }
+    });
+
+    // Layer 0.6: Train station icon on top of each circle
+    map.loadImage('Train-station-Icon.png', (err, img) => {
+        if (err) { console.warn('Could not load Train-station-Icon.png:', err); return; }
+        if (!map.hasImage('train-station-icon')) {
+            map.addImage('train-station-icon', img);
+        }
+        map.addLayer({
+            id: 'transit-station-icons',
+            type: 'symbol',
+            source: 'transit-data',
+            minzoom: 11,
+            filter: ['==', ['geometry-type'], 'Point'],
+            layout: {
+                'visibility': 'visible',
+                'icon-image': 'train-station-icon',
+                'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.022, 15, 0.042],
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true
+            }
+        }, 'routes-halo');
     });
 
     // ── Station Interactive Rings ──
@@ -415,7 +437,8 @@ map.on('load', () => {
             if (map.getLayer('station-rings-fill')) map.moveLayer('station-rings-fill');
             if (map.getLayer('station-rings-line')) map.moveLayer('station-rings-line');
             if (map.getLayer('station-rings-label')) map.moveLayer('station-rings-label');
-            if (map.getLayer('transit-stations')) map.moveLayer('transit-stations'); // Keep station points above the rings
+            if (map.getLayer('transit-stations'))      map.moveLayer('transit-stations');      // Keep station circles above the rings
+            if (map.getLayer('transit-station-icons')) map.moveLayer('transit-station-icons'); // Keep icons above the circles
             
             // Trigger customized geometric ripple radius generator
             animateRings(coords);
@@ -833,8 +856,9 @@ document.getElementById('viz-distance').addEventListener('click', () => applyCol
 
 document.getElementById('toggle-transit').addEventListener('change', (e) => {
     const visibility = e.target.checked ? 'visible' : 'none';
-    if (map.getLayer('transit-lines')) map.setLayoutProperty('transit-lines', 'visibility', visibility);
-    if (map.getLayer('transit-stations')) map.setLayoutProperty('transit-stations', 'visibility', visibility);
+    if (map.getLayer('transit-lines'))         map.setLayoutProperty('transit-lines',         'visibility', visibility);
+    if (map.getLayer('transit-stations'))      map.setLayoutProperty('transit-stations',      'visibility', visibility);
+    if (map.getLayer('transit-station-icons')) map.setLayoutProperty('transit-station-icons', 'visibility', visibility);
 });
 
 // ── Unified Map Filtering Logic ──
