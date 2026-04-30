@@ -560,7 +560,7 @@ map.on('load', () => {
         id: 'dbkl-polygons-fill',
         type: 'fill',
         source: 'dbkl-routes',
-        filter: ['==', ['geometry-type'], 'Polygon'],
+        filter: ['all', ['==', ['geometry-type'], 'Polygon'], ['==', ['get', 'route_type'], 'Existing Route']],
         layout: { 'visibility': 'visible' },
         paint: {
             'fill-color': dbklColor,
@@ -572,7 +572,7 @@ map.on('load', () => {
         id: 'dbkl-polygons-outline',
         type: 'line',
         source: 'dbkl-routes',
-        filter: ['==', ['geometry-type'], 'Polygon'],
+        filter: ['all', ['==', ['geometry-type'], 'Polygon'], ['==', ['get', 'route_type'], 'Existing Route']],
         layout: { 'line-join': 'round', 'visibility': 'visible' },
         paint: {
             'line-color': dbklColor,
@@ -582,12 +582,12 @@ map.on('load', () => {
         }
     });
 
-    // Halo: soft glow using per-route color
+    // Halo: soft glow — Existing Routes only
     map.addLayer({
         id: 'dbkl-routes-halo',
         type: 'line',
         source: 'dbkl-routes',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: ['all', ['==', ['geometry-type'], 'LineString'], ['==', ['get', 'route_type'], 'Existing Route']],
         layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
         paint: {
             'line-color': dbklColor,
@@ -597,12 +597,12 @@ map.on('load', () => {
         }
     });
 
-    // Core: dashed line colored per route type
+    // Core: dashed line — Existing Routes only
     map.addLayer({
         id: 'dbkl-routes-core',
         type: 'line',
         source: 'dbkl-routes',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: ['all', ['==', ['geometry-type'], 'LineString'], ['==', ['get', 'route_type'], 'Existing Route']],
         layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
         paint: {
             'line-color': dbklColor,
@@ -750,8 +750,9 @@ map.on('load', () => {
                 });
 
                 // Update UI stats
-                document.getElementById('total-routes').innerText = totalCount;
-                document.getElementById('total-distance').innerText = totalDist.toFixed(1) + ' km';
+                document.getElementById('total-routes').innerText       = totalCount;
+                document.getElementById('total-distance').innerText     = totalDist.toFixed(1) + ' km';
+                document.getElementById('total-contributors').innerText = contributors.size;
 
                 // Build the distance color expression
                 if (minDist === Infinity) minDist = 0;

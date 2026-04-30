@@ -172,35 +172,43 @@ body {
 
 .stats-container {
     display: flex;
-    gap: 12px;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.55);
 }
 
 .stat-box {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 14px 10px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 8px;
 }
 
-.stat-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--accent-blue);
-    margin-bottom: 3px;
+.stat-box:last-child {
+    border-bottom: none;
 }
 
 .stat-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 0.72rem;
     color: var(--text-secondary);
     font-weight: 500;
+    white-space: nowrap;
 }
+
+.stat-value {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    white-space: nowrap;
+    text-align: right;
+}
+
 
 /* ── Legend ───────────────────────────────────────── */
 

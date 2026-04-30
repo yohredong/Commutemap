@@ -89,12 +89,16 @@
 
         <div class="stats-container">
             <div class="stat-box">
-                <span class="stat-value" id="total-routes">–</span>
                 <span class="stat-label">Total Routes</span>
+                <span class="stat-value" id="total-routes">–</span>
             </div>
             <div class="stat-box">
+                <span class="stat-label">Total Distance</span>
                 <span class="stat-value" id="total-distance">–</span>
-                <span class="stat-label">Total KM</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Contributors</span>
+                <span class="stat-value" id="total-contributors">–</span>
             </div>
         </div>
 
@@ -130,24 +134,8 @@
                 <!-- Mini DBKL color legend -->
                 <div class="dbkl-legend">
                     <div class="dbkl-legend-item">
-                        <span class="dbkl-legend-line" style="border-color:#0288D1;"></span>
-                        <span>Planned Route</span>
-                    </div>
-                    <div class="dbkl-legend-item">
                         <span class="dbkl-legend-line" style="border-color:#1A237E;"></span>
                         <span>Existing Route</span>
-                    </div>
-                    <div class="dbkl-legend-item">
-                        <span class="dbkl-legend-line" style="border-color:#48c4d4;"></span>
-                        <span>Waterfront</span>
-                    </div>
-                    <div class="dbkl-legend-item">
-                        <span class="dbkl-legend-line" style="border-color:#f43f3f;"></span>
-                        <span>Missing Link</span>
-                    </div>
-                    <div class="dbkl-legend-item">
-                        <span class="dbkl-legend-line" style="border-color:#dd00ff;"></span>
-                        <span>Proposed Connection</span>
                     </div>
                 </div>
             </div>
@@ -189,7 +177,7 @@
     </button>
 
     <!-- Custom Script -->
-    <script src="app.js?v=no_contrib_filter_01"></script>
+    <script src="app.js?v=stat_rows_01"></script>
 </body>
 
 </html>
