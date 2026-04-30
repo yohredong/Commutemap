@@ -103,7 +103,6 @@
             <h3>Visualization</h3>
             <div class="viz-toggle-group">
                 <button class="viz-btn active" id="viz-type" title="Color routes by transport type">By Type</button>
-                <button class="viz-btn" id="viz-contributor" title="Color routes by contributor">By Contributor</button>
                 <button class="viz-btn" id="viz-distance" title="Color routes by distance">By Distance</button>
             </div>
             
@@ -122,13 +121,35 @@
                     <span>
                         Show DBKL Routes
                         <small>(Planned &amp; Existing)</small>
-                        <span class="dbkl-swatch"></span>
                     </span>
                     <div class="switch">
                         <input type="checkbox" id="toggle-dbkl" checked>
                         <span class="slider round"></span>
                     </div>
                 </label>
+                <!-- Mini DBKL color legend -->
+                <div class="dbkl-legend">
+                    <div class="dbkl-legend-item">
+                        <span class="dbkl-legend-line" style="border-color:#0288D1;"></span>
+                        <span>Planned Route</span>
+                    </div>
+                    <div class="dbkl-legend-item">
+                        <span class="dbkl-legend-line" style="border-color:#1A237E;"></span>
+                        <span>Existing Route</span>
+                    </div>
+                    <div class="dbkl-legend-item">
+                        <span class="dbkl-legend-line" style="border-color:#48c4d4;"></span>
+                        <span>Waterfront</span>
+                    </div>
+                    <div class="dbkl-legend-item">
+                        <span class="dbkl-legend-line" style="border-color:#f43f3f;"></span>
+                        <span>Missing Link</span>
+                    </div>
+                    <div class="dbkl-legend-item">
+                        <span class="dbkl-legend-line" style="border-color:#dd00ff;"></span>
+                        <span>Proposed Connection</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -138,11 +159,6 @@
             <div id="type-legend-items"></div>
         </div>
 
-        <!-- Legend: By Contributor (hidden by default) -->
-        <div class="legend-container" id="legend-contributor" style="display: none;">
-            <h3>Legend — Contributors</h3>
-            <div id="contributor-legend-items"></div>
-        </div>
 
         <!-- Legend: By Distance (hidden by default) -->
         <div class="legend-container" id="legend-distance" style="display: none;">
@@ -173,7 +189,7 @@
     </button>
 
     <!-- Custom Script -->
-    <script src="app.js?v=dbkl_layer_01"></script>
+    <script src="app.js?v=no_contrib_filter_01"></script>
 </body>
 
 </html>

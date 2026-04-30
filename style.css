@@ -351,15 +351,29 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* DBKL layer swatch — dashed amber line shown inline next to the label */
-.dbkl-swatch {
+/* DBKL layer mini color legend — shown below the toggle */
+.dbkl-legend {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.dbkl-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Dashed line swatch that mirrors the map line style */
+.dbkl-legend-line {
     display: inline-block;
-    width: 28px;
-    height: 4px;
-    margin-left: 6px;
-    border-top: 3px dashed #f59e0b;
-    vertical-align: middle;
-    border-radius: 1px;
+    width: 30px;
+    height: 0;
+    flex-shrink: 0;
+    border-top: 2.5px dashed currentColor;
     opacity: 0.9;
 }
 
@@ -901,4 +915,47 @@ input:checked + .slider:before {
         height: 44px;
         font-size: 24px;
     }
+}
+
+/* ── User Location Dot ──────────────────────────── */
+.user-location-dot {
+    position: relative;
+    width: 18px;
+    height: 18px;
+}
+
+/* Inner filled circle */
+.user-location-dot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #1a73e8;
+    border: 2.5px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.5);
+}
+
+/* Pulsing ripple ring */
+.user-location-dot::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: rgba(26, 115, 232, 0.18);
+    animation: user-loc-pulse 2s ease-out infinite;
+}
+
+@keyframes user-loc-pulse {
+    0%   { transform: scale(0.6); opacity: 1; }
+    80%  { transform: scale(1.6); opacity: 0; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Accuracy radius ring (separate element placed behind dot) */
+.user-location-accuracy {
+    border-radius: 50%;
+    background: rgba(26, 115, 232, 0.08);
+    border: 1px solid rgba(26, 115, 232, 0.25);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
 }

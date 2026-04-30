@@ -74,25 +74,10 @@ toggleBtn.addEventListener('click', () => {
 
 // ─── Color definitions ──────────────────────────
 
-// Distinct colors for different contributors
-const contributorPalette = [
-    '#1565a0', // Blue
-    '#c93d2a', // Red
-    '#7a9e3e', // Green
-    '#e67e22', // Orange
-    '#8e44ad', // Purple
-    '#2a8b8b', // Teal
-    '#d35400', // Dark Orange
-    '#27ae60', // Emerald Green
-    '#2980b9', // Light Blue
-    '#c0392b'  // Dark Red
-];
-
 // Stores the dynamic expressions after data loads
-let colorByContributor = '#1565a0'; // Default setup
 let colorByType = '#1565a0';
 let colorByDistance = null;
-let currentMode = 'type';   // 'type' | 'contributor' | 'distance'
+let currentMode = 'type';   // 'type' | 'distance'
 
 function buildColorByDistance(minDist, maxDist) {
     // Use 'interpolate' across the distance_km property
@@ -110,12 +95,6 @@ function buildColorByDistance(minDist, maxDist) {
 
 // ── Resolve the JS color for a given feature based on current vis mode ──
 function resolveFeatureColor(props) {
-    if (currentMode === 'contributor' && colorByContributor) {
-        const contribEls = document.querySelectorAll('.contrib-filter');
-        const contribs = Array.from(contribEls).map(cb => cb.value);
-        const idx = contribs.indexOf(props.contributor || 'Anonymous');
-        return idx >= 0 ? contributorPalette[idx % contributorPalette.length] : '#6b6355';
-    }
     if (currentMode === 'distance' && colorByDistance) {
         const d = parseFloat(props.distance_km) || 0;
         if (d < 3) return '#2ecc71';
@@ -134,7 +113,6 @@ function resolveFeatureColor(props) {
 function applyColorMode(mode) {
     let color = colorByType;
     if (mode === 'distance' && colorByDistance) color = colorByDistance;
-    if (mode === 'contributor' && colorByContributor) color = colorByContributor;
 
     map.setPaintProperty('routes-halo', 'line-color', color);
     map.setPaintProperty('routes-core', 'line-color', color);
@@ -146,13 +124,11 @@ function applyColorMode(mode) {
 
     // Toggle active button
     document.getElementById('viz-type').classList.toggle('active', mode === 'type');
-    document.getElementById('viz-contributor').classList.toggle('active', mode === 'contributor');
     document.getElementById('viz-distance').classList.toggle('active', mode === 'distance');
 
     // Toggle legends
-    document.getElementById('legend-type').style.display        = mode === 'type' ? '' : 'none';
-    document.getElementById('legend-contributor').style.display = mode === 'contributor' ? '' : 'none';
-    document.getElementById('legend-distance').style.display    = mode === 'distance' ? '' : 'none';
+    document.getElementById('legend-type').style.display     = mode === 'type'     ? '' : 'none';
+    document.getElementById('legend-distance').style.display = mode === 'distance' ? '' : 'none';
 }
 
 // ─── Map: layers & data ─────────────────────────
@@ -559,31 +535,80 @@ map.on('load', () => {
     map.on('mouseleave', 'transit-stations', () => map.getCanvas().style.cursor = '');
 
     // ── DBKL Route Layers (rendered below community routes) ──
-    // Halo: soft amber glow
+    // Color expression matching the original DBKL 2026 Bike Map:
+    //   #1A237E  → Existing routes (deep navy)
+    //   #0288D1  → Planned / Pelan Induk (sky blue)
+    //   #B2EBF2  → GDCI / Waterfront paths (light cyan)
+    //   #F50000  → Missing Links (red)
+    //   #FF0000  → Missing Link variant (bright red)
+    //   #FF00FF  → Proposed Connection (magenta)
+    //   #BDBDBD  → Contextual / reference (grey)
+    const dbklColor = [
+        'match', ['coalesce', ['get', 'kml_color'], '0288D1'],
+        '1A237E', '#1A237E',   // Existing Route — deep navy
+        '0288D1', '#0288D1',   // Planned Route  — sky blue
+        'B2EBF2', '#48c4d4',   // GDCI/Waterfront — vivid cyan (brightened for visibility)
+        'F50000', '#f43f3f',   // Missing Link   — red
+        'FF0000', '#f43f3f',   // Missing Link   — red variant
+        'FF00FF', '#dd00ff',   // Proposed Connection — magenta
+        'BDBDBD', '#9e9e9e',   // Contextual     — grey
+        '#0288D1'              // default fallback
+    ];
+
+    // ── DBKL Polygon layers (area zones: Pelan Induk, Park Bike Routes) ──
+    map.addLayer({
+        id: 'dbkl-polygons-fill',
+        type: 'fill',
+        source: 'dbkl-routes',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        layout: { 'visibility': 'visible' },
+        paint: {
+            'fill-color': dbklColor,
+            'fill-opacity': 0.12
+        }
+    });
+
+    map.addLayer({
+        id: 'dbkl-polygons-outline',
+        type: 'line',
+        source: 'dbkl-routes',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        layout: { 'line-join': 'round', 'visibility': 'visible' },
+        paint: {
+            'line-color': dbklColor,
+            'line-width': 2,
+            'line-dasharray': [4, 2],
+            'line-opacity': 0.7
+        }
+    });
+
+    // Halo: soft glow using per-route color
     map.addLayer({
         id: 'dbkl-routes-halo',
         type: 'line',
         source: 'dbkl-routes',
+        filter: ['==', ['geometry-type'], 'LineString'],
         layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
         paint: {
-            'line-color': '#f59e0b',
+            'line-color': dbklColor,
             'line-width': ['interpolate', ['linear'], ['zoom'], 10, 8, 15, 18],
             'line-blur':  ['interpolate', ['linear'], ['zoom'], 10, 4, 15, 10],
-            'line-opacity': 0.25
+            'line-opacity': 0.28
         }
     });
 
-    // Core: solid amber line with dashes to signal "planned" character
+    // Core: dashed line colored per route type
     map.addLayer({
         id: 'dbkl-routes-core',
         type: 'line',
         source: 'dbkl-routes',
+        filter: ['==', ['geometry-type'], 'LineString'],
         layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
         paint: {
-            'line-color': '#f59e0b',
+            'line-color': dbklColor,
             'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5],
             'line-dasharray': [4, 2],
-            'line-opacity': 0.85
+            'line-opacity': 0.9
         }
     });
 
@@ -733,26 +758,6 @@ map.on('load', () => {
                 if (maxDist === -Infinity) maxDist = 100;
                 colorByDistance = buildColorByDistance(minDist, maxDist);
 
-                // Build the contributor color expression & legend
-                const uniqueContributors = Array.from(contributors).sort();
-                const matchExprContrib = ['match', ['coalesce', ['get', 'contributor'], 'Anonymous']];
-                let legendHtmlContrib = '';
-                
-                uniqueContributors.forEach((c, index) => {
-                    const color = contributorPalette[index % contributorPalette.length];
-                    matchExprContrib.push(c, color);
-                    legendHtmlContrib += `
-                        <label class="legend-item" style="cursor: pointer;">
-                            <input type="checkbox" class="contrib-filter" value="${c}" checked>
-                            <span class="color-line" style="background: ${color};"></span>
-                            <span>${c}</span>
-                        </label>
-                    `;
-                });
-                matchExprContrib.push('#6b6355'); // Default fallback color if no match
-                colorByContributor = matchExprContrib;
-                document.getElementById('contributor-legend-items').innerHTML = legendHtmlContrib;
-
                 // Build the transport type color expression & legend
                 const uniqueTypes = Array.from(transportTypes).sort();
                 const matchExprType = ['match', ['coalesce', ['get', 'type'], 'unknown']];
@@ -765,7 +770,9 @@ map.on('load', () => {
                     if (lower === 'bicycle' || lower === 'cycling') color = '#1565a0';
                     else if (lower === 'walking') color = '#c93d2a';
                     else {
-                        color = contributorPalette[pIdx % contributorPalette.length];
+                        // Use a simple index-based palette for other types
+                        const extraPalette = ['#e67e22','#8e44ad','#2a8b8b','#d35400','#27ae60'];
+                        color = extraPalette[pIdx % extraPalette.length];
                         pIdx++;
                     }
                     matchExprType.push(t, color);
@@ -1056,7 +1063,6 @@ map.on('load', () => {
 
 // ─── Toggle button event listeners ──────────────
 document.getElementById('viz-type').addEventListener('click', () => applyColorMode('type'));
-document.getElementById('viz-contributor').addEventListener('click', () => applyColorMode('contributor'));
 document.getElementById('viz-distance').addEventListener('click', () => applyColorMode('distance'));
 
 document.getElementById('toggle-transit').addEventListener('change', (e) => {
@@ -1068,8 +1074,10 @@ document.getElementById('toggle-transit').addEventListener('change', (e) => {
 
 document.getElementById('toggle-dbkl').addEventListener('change', (e) => {
     const visibility = e.target.checked ? 'visible' : 'none';
-    if (map.getLayer('dbkl-routes-halo')) map.setLayoutProperty('dbkl-routes-halo', 'visibility', visibility);
-    if (map.getLayer('dbkl-routes-core')) map.setLayoutProperty('dbkl-routes-core', 'visibility', visibility);
+    if (map.getLayer('dbkl-polygons-fill'))    map.setLayoutProperty('dbkl-polygons-fill',    'visibility', visibility);
+    if (map.getLayer('dbkl-polygons-outline')) map.setLayoutProperty('dbkl-polygons-outline', 'visibility', visibility);
+    if (map.getLayer('dbkl-routes-halo'))      map.setLayoutProperty('dbkl-routes-halo',      'visibility', visibility);
+    if (map.getLayer('dbkl-routes-core'))      map.setLayoutProperty('dbkl-routes-core',      'visibility', visibility);
 });
 
 // ── Unified Map Filtering Logic ──
@@ -1094,20 +1102,7 @@ function updateAllFilters() {
     }
     distCategoryLabel.innerText = category;
 
-    // 2. Evaluate Contributor Constraints
-    const constribNodes = document.querySelectorAll('.contrib-filter:checked');
-    const allContribs = document.querySelectorAll('.contrib-filter');
-    if (constribNodes.length < allContribs.length) {
-        if (constribNodes.length === 0) {
-            filters.push(['==', '1', '2']); // Hide all if 0 selected
-        } else {
-            const anyContrib = ['any'];
-            constribNodes.forEach(cb => anyContrib.push(['==', ['coalesce', ['get', 'contributor'], 'Anonymous'], cb.value]));
-            filters.push(anyContrib);
-        }
-    }
-
-    // 3. Evaluate Transport Type Constraints
+    // 2. Evaluate Transport Type Constraints
     const typeNodes = document.querySelectorAll('.type-filter:checked');
     const allTypes = document.querySelectorAll('.type-filter');
     if (typeNodes.length < allTypes.length) {
@@ -1368,4 +1363,56 @@ document.getElementById('sidebar').addEventListener('change', (e) => {
             { enableHighAccuracy: true, timeout: 10000 }
         );
     });
+}());
+
+// ─── Persistent User Location Dot ────────────────────────────────────────────
+// Uses a DOM Marker so it renders ABOVE all WebGL layers automatically.
+// watchPosition keeps it updated as the device moves.
+(function setupUserLocation() {
+    if (!navigator.geolocation) return;
+
+    // Blue pulsing dot
+    const dotEl = document.createElement('div');
+    dotEl.className = 'user-location-dot';
+    const dotMarker = new maplibregl.Marker({ element: dotEl, anchor: 'center' });
+
+    // Accuracy radius ring (sits behind the dot)
+    const accEl = document.createElement('div');
+    accEl.className = 'user-location-accuracy';
+    const accMarker = new maplibregl.Marker({ element: accEl, anchor: 'center' });
+
+    let lastAccuracy = null;
+    let lastLat      = null;
+
+    // Convert metres accuracy → CSS pixel diameter at current zoom + latitude
+    function accuracyToPx(accuracyMetres, lat) {
+        const zoom = map.getZoom();
+        const mpp  = (156543.03392 * Math.cos(lat * Math.PI / 180)) / Math.pow(2, zoom);
+        return Math.max((accuracyMetres / mpp) * 2, 24); // min 24 px
+    }
+
+    function updateAccuracyRing() {
+        if (lastAccuracy === null || lastLat === null) return;
+        const sizePx = accuracyToPx(lastAccuracy, lastLat);
+        accEl.style.width  = sizePx + 'px';
+        accEl.style.height = sizePx + 'px';
+    }
+
+    // Re-scale the accuracy ring whenever zoom changes
+    map.on('zoom', updateAccuracyRing);
+
+    navigator.geolocation.watchPosition(
+        (pos) => {
+            const { longitude, latitude, accuracy } = pos.coords;
+            lastAccuracy = accuracy;
+            lastLat      = latitude;
+
+            dotMarker.setLngLat([longitude, latitude]).addTo(map);
+
+            updateAccuracyRing();
+            accMarker.setLngLat([longitude, latitude]).addTo(map);
+        },
+        (err) => { console.warn('User location unavailable:', err.message); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+    );
 }());
