@@ -189,6 +189,12 @@ map.on('load', () => {
         data: 'data/transit.geojson' + cacheBust
     });
 
+    // ── DBKL 2026 Bicycle Master Plan Source ──
+    map.addSource('dbkl-routes', {
+        type: 'geojson',
+        data: 'data/dbkl_routes.geojson' + cacheBust
+    });
+
     const getTransitColor = [
         'case',
         // Using substring matches against name or ref from OSM for BOTH lines and stations
@@ -551,6 +557,35 @@ map.on('load', () => {
     
     map.on('mouseenter', 'transit-stations', () => map.getCanvas().style.cursor = 'pointer');
     map.on('mouseleave', 'transit-stations', () => map.getCanvas().style.cursor = '');
+
+    // ── DBKL Route Layers (rendered below community routes) ──
+    // Halo: soft amber glow
+    map.addLayer({
+        id: 'dbkl-routes-halo',
+        type: 'line',
+        source: 'dbkl-routes',
+        layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
+        paint: {
+            'line-color': '#f59e0b',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 8, 15, 18],
+            'line-blur':  ['interpolate', ['linear'], ['zoom'], 10, 4, 15, 10],
+            'line-opacity': 0.25
+        }
+    });
+
+    // Core: solid amber line with dashes to signal "planned" character
+    map.addLayer({
+        id: 'dbkl-routes-core',
+        type: 'line',
+        source: 'dbkl-routes',
+        layout: { 'line-join': 'round', 'line-cap': 'round', 'visibility': 'visible' },
+        paint: {
+            'line-color': '#f59e0b',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5],
+            'line-dasharray': [4, 2],
+            'line-opacity': 0.85
+        }
+    });
 
     // Layer 0: White isolation overlay (world polygon, initially hidden)
     // Lives INSIDE WebGL so selected-route can render above it
@@ -1029,6 +1064,12 @@ document.getElementById('toggle-transit').addEventListener('change', (e) => {
     if (map.getLayer('transit-lines'))         map.setLayoutProperty('transit-lines',         'visibility', visibility);
     if (map.getLayer('transit-stations'))      map.setLayoutProperty('transit-stations',      'visibility', visibility);
     if (map.getLayer('transit-station-icons')) map.setLayoutProperty('transit-station-icons', 'visibility', visibility);
+});
+
+document.getElementById('toggle-dbkl').addEventListener('change', (e) => {
+    const visibility = e.target.checked ? 'visible' : 'none';
+    if (map.getLayer('dbkl-routes-halo')) map.setLayoutProperty('dbkl-routes-halo', 'visibility', visibility);
+    if (map.getLayer('dbkl-routes-core')) map.setLayoutProperty('dbkl-routes-core', 'visibility', visibility);
 });
 
 // ── Unified Map Filtering Logic ──

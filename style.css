@@ -351,6 +351,18 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
+/* DBKL layer swatch — dashed amber line shown inline next to the label */
+.dbkl-swatch {
+    display: inline-block;
+    width: 28px;
+    height: 4px;
+    margin-left: 6px;
+    border-top: 3px dashed #f59e0b;
+    vertical-align: middle;
+    border-radius: 1px;
+    opacity: 0.9;
+}
+
 /* ── Gradient Legend ───────────────────────────── */
 
 .gradient-bar {
