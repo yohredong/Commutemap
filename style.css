@@ -441,6 +441,29 @@ input:checked + .slider:before {
     line-height: 1.55;
 }
 
+.sidebar-footer {
+    padding-top: 10px;
+    text-align: center;
+}
+
+.disclaimer-link {
+    display: inline-block;
+    font-size: 0.70rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 5px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.disclaimer-link:hover {
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+    background: rgba(201, 61, 42, 0.06);
+}
+
 /* ── MapLibre Popup Styles ───────────────────────── */
 
 .maplibregl-popup {
@@ -966,4 +989,86 @@ input:checked + .slider:before {
     border: 1px solid rgba(26, 115, 232, 0.25);
     pointer-events: none;
     transform: translate(-50%, -50%);
+}
+
+/* ── Basemap Style Picker ───────────────────────── */
+.basemap-picker {
+    position: fixed;
+    bottom: 36px;          /* sit above the MapLibre scale control (~28px) */
+    right: 10px;
+    z-index: 200;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(139, 119, 85, 0.22);
+    border-radius: 20px;
+    padding: 4px 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.basemap-btn {
+    background: transparent;
+    border: none;
+    border-radius: 16px;
+    padding: 5px 11px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+
+.basemap-btn:hover {
+    background: rgba(21, 101, 160, 0.10);
+    color: var(--accent-blue);
+}
+
+.basemap-btn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Tablet (641–900px): slightly more compact */
+@media (max-width: 900px) and (min-width: 641px) {
+    .basemap-picker {
+        bottom: 32px;
+        right: 8px;
+        padding: 3px 5px;
+        gap: 3px;
+    }
+    .basemap-btn {
+        padding: 5px 9px;
+        font-size: 0.68rem;
+    }
+}
+
+/* Mobile (≤640px): icon-only labels, scrollable strip, sits above Near Me FAB */
+@media (max-width: 640px) {
+    .basemap-picker {
+        bottom: 80px;       /* above Near Me button */
+        right: 10px;
+        left: 10px;
+        right: 10px;
+        border-radius: 14px;
+        padding: 4px 6px;
+        gap: 3px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Hide scrollbar */
+        scrollbar-width: none;
+    }
+    .basemap-picker::-webkit-scrollbar { display: none; }
+
+    .basemap-btn {
+        flex-shrink: 0;
+        padding: 5px 12px;
+        font-size: 0.70rem;
+    }
 }

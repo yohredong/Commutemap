@@ -170,6 +170,10 @@
             <p>Hover over a route to highlight it.</p>
             <p>Click on any route for detailed information.</p>
         </div>
+
+        <div class="sidebar-footer">
+            <a href="disclaimer.html" target="_blank" rel="noopener noreferrer" class="disclaimer-link">⚠️ Disclaimer &amp; Safety Notice</a>
+        </div>
     </div>
 
     <!-- Near Me floating button -->
@@ -178,8 +182,16 @@
         <span class="fab-near-me-label">Near Me</span>
     </button>
 
+    <!-- Basemap Style Picker -->
+    <div class="basemap-picker" id="basemap-picker">
+        <button class="basemap-btn active" data-style="light"   title="Light basemap">☀️ Light</button>
+        <button class="basemap-btn"        data-style="dark"    title="Dark basemap">🌙 Dark</button>
+        <button class="basemap-btn"        data-style="terrain" title="Terrain basemap">🏔 Terrain</button>
+        <button class="basemap-btn"        data-style="satellite" title="Satellite imagery">🛰 Satellite</button>
+    </div>
+
     <!-- Custom Script -->
-    <script src="app.js?v=stat_rows_01"></script>
+    <script src="app.js?v=basemap_picker_01"></script>
 </body>
 
 </html>

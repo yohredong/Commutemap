@@ -2,9 +2,28 @@
 // Pittsburgh-style basemap + KL Bicycle Routes
 // ─────────────────────────────────────────────────
 
+// ── Basemap raster tile sources ──
+// All 4 basemaps are loaded as raster sources on startup.
+// Switching basemaps just toggles layer visibility — custom layers are NEVER removed.
+const BASEMAP_TILES = {
+    light:     'https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}@2x.png',
+    dark:      'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+    terrain:   'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+};
+const BASEMAP_LAYER_IDS = Object.keys(BASEMAP_TILES).map(k => 'basemap-' + k);
+
+let currentBasemap = 'light';
+
+// Start with a blank style — basemap tiles are added as raster sources in initMapLayers()
 const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    style: {
+        version: 8,
+        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+        sources: {},
+        layers: []
+    },
     center: [101.6869, 3.1390],
     zoom: 11,
     pitch: 0,
@@ -134,42 +153,43 @@ function applyColorMode(mode) {
 // ─── Map: layers & data ─────────────────────────
 let hoveredRunId = null;
 
-map.on('load', () => {
+// ─── Master layer initialiser (called ONCE on map load) ───
+function initMapLayers() {
 
-    // ── Tint basemap ──
-    const bgLayers = map.getStyle().layers;
-    for (const layer of bgLayers) {
-        if (layer.id === 'background') {
-            map.setPaintProperty('background', 'background-color', '#f3ede0');
-        }
-        if (layer.id === 'water') {
-            map.setPaintProperty('water', 'fill-color', '#b8d8e8');
-        }
-        if (layer.id.includes('park') || layer.id.includes('landuse') && layer.type === 'fill') {
-            try { map.setPaintProperty(layer.id, 'fill-color', '#c8dba5'); }
-            catch (e) { /* skip */ }
-        }
-    }
+    // ── 1. Add raster basemap layers (all 4, only 'light' visible initially) ──
+    Object.entries(BASEMAP_TILES).forEach(([key, tileUrl]) => {
+        const sourceId = 'basemap-src-' + key;
+        const layerId  = 'basemap-' + key;
+        map.addSource(sourceId, {
+            type: 'raster',
+            tiles: [tileUrl],
+            tileSize: 256,
+            attribution: key === 'satellite' ? 'Tiles © Esri' : '© CARTO'
+        });
+        map.addLayer({
+            id: layerId,
+            type: 'raster',
+            source: sourceId,
+            layout: { visibility: key === currentBasemap ? 'visible' : 'none' }
+        });
+    });
 
-    // ── Add GeoJSON source (cache-busted) ──
+    // ── 2. Add GeoJSON sources (cache-busted) ──
     const cacheBust = '?v=' + Date.now();
     map.addSource('commute-routes', {
         type: 'geojson',
         data: 'data/routes.geojson' + cacheBust,
         generateId: true
     });
-
-    // ── Pre-load Unified Transit Source ──
     map.addSource('transit-data', {
         type: 'geojson',
         data: 'data/transit.geojson' + cacheBust
     });
-
-    // ── DBKL 2026 Bicycle Master Plan Source ──
     map.addSource('dbkl-routes', {
         type: 'geojson',
         data: 'data/dbkl_routes.geojson' + cacheBust
     });
+
 
     const getTransitColor = [
         'case',
@@ -184,6 +204,7 @@ map.on('load', () => {
         ['in', 'Express Rail Link', ['string', ['coalesce', ['get', 'network'], ''], '']], '#4B0082',
         '#95a5a6' // Generic fallback
     ];
+
 
     // Layer 0: Transit Lines (Behind commute lines)
     map.addLayer({
@@ -263,10 +284,12 @@ map.on('load', () => {
     });
 
     // ── Station Interactive Rings ──
-    map.addSource('station-rings', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.getSource('station-rings')) {
+        map.addSource('station-rings', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+    }
 
     map.addLayer({
         id: 'station-rings-fill',
@@ -318,10 +341,12 @@ map.on('load', () => {
     });
 
     // ── Active Route Tracker Layers ──
-    map.addSource('active-route-meta', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.getSource('active-route-meta')) {
+        map.addSource('active-route-meta', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+    }
 
     // 1. Endpoint Circles (color matches route, white stroke)
     map.addLayer({
@@ -354,10 +379,12 @@ map.on('load', () => {
     });
 
     // ── Hover Preview Layers (desktop only, lighter effect) ──
-    map.addSource('hover-route-meta', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.getSource('hover-route-meta')) {
+        map.addSource('hover-route-meta', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+    }
 
     map.addLayer({
         id: 'hover-route-endpoints',
@@ -614,16 +641,18 @@ map.on('load', () => {
 
     // Layer 0: White isolation overlay (world polygon, initially hidden)
     // Lives INSIDE WebGL so selected-route can render above it
-    map.addSource('isolation-bg', {
-        type: 'geojson',
-        data: {
-            type: 'Feature',
-            geometry: {
-                type: 'Polygon',
-                coordinates: [[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]
+    if (!map.getSource('isolation-bg')) {
+        map.addSource('isolation-bg', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]
+                }
             }
-        }
-    });
+        });
+    }
     map.addLayer({
         id: 'route-isolation-bg',
         type: 'fill',
@@ -880,10 +909,9 @@ map.on('load', () => {
         }
     };
 
-    map.on('mousemove',  'routes-core',  handleRouteHoverEnter);
-    map.on('mouseleave', 'routes-core',  handleRouteHoverLeave);
-    map.on('mousemove',  'routes-touch', handleRouteHoverEnter);
-    map.on('mouseleave', 'routes-touch', handleRouteHoverLeave);
+    // Export hover handlers globally so they can be bound outside
+    window._handleRouteHoverEnter = handleRouteHoverEnter;
+    window._handleRouteHoverLeave = handleRouteHoverLeave;
 
     // ── Route click state ──
     const routeOverlay  = document.getElementById('route-overlay');
@@ -1058,9 +1086,26 @@ map.on('load', () => {
         }
     };
 
-    map.on('click', 'routes-core',  handleRouteClick);
-    map.on('click', 'routes-touch', handleRouteClick);
+    // NOTE: click handlers are registered once at module level (below)
+    //       Do NOT add map.on('click') here — it would duplicate on every style switch.
+    window._handleRouteClick = handleRouteClick;
+}
+
+map.on('load', initMapLayers);
+
+// Route click handlers — registered ONCE at module level
+map.on('click', 'routes-core',  (...args) => {
+    if (typeof window._handleRouteClick === 'function') window._handleRouteClick(...args);
 });
+map.on('click', 'routes-touch', (...args) => {
+    if (typeof window._handleRouteClick === 'function') window._handleRouteClick(...args);
+});
+
+// Route hover handlers — registered ONCE at module level
+map.on('mousemove',  'routes-core',  (...args) => { if (typeof window._handleRouteHoverEnter === 'function') window._handleRouteHoverEnter(...args); });
+map.on('mouseleave', 'routes-core',  (...args) => { if (typeof window._handleRouteHoverLeave === 'function') window._handleRouteHoverLeave(...args); });
+map.on('mousemove',  'routes-touch', (...args) => { if (typeof window._handleRouteHoverEnter === 'function') window._handleRouteHoverEnter(...args); });
+map.on('mouseleave', 'routes-touch', (...args) => { if (typeof window._handleRouteHoverLeave === 'function') window._handleRouteHoverLeave(...args); });
 
 // ─── Toggle button event listeners ──────────────
 document.getElementById('viz-type').addEventListener('click', () => applyColorMode('type'));
@@ -1080,6 +1125,29 @@ document.getElementById('toggle-dbkl').addEventListener('change', (e) => {
     if (map.getLayer('dbkl-routes-halo'))      map.setLayoutProperty('dbkl-routes-halo',      'visibility', visibility);
     if (map.getLayer('dbkl-routes-core'))      map.setLayoutProperty('dbkl-routes-core',      'visibility', visibility);
 });
+
+// ─── Basemap Switcher ──────────────────────────────
+// Shows/hides pre-loaded raster tile layers. Custom data layers are NEVER removed.
+document.querySelectorAll('.basemap-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const style = btn.dataset.style;
+        if (style === currentBasemap) return;
+        currentBasemap = style;
+
+        // Update active button state
+        document.querySelectorAll('.basemap-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Show only the selected basemap layer, hide the rest
+        Object.keys(BASEMAP_TILES).forEach(k => {
+            const layerId = 'basemap-' + k;
+            if (map.getLayer(layerId)) {
+                map.setLayoutProperty(layerId, 'visibility', k === style ? 'visible' : 'none');
+            }
+        });
+    });
+});
+
 
 // ── Unified Map Filtering Logic ──
 const distSlider = document.getElementById('dist-category-slider');
@@ -1144,11 +1212,15 @@ document.getElementById('sidebar').addEventListener('change', (e) => {
     let nearMeRingAnimId = null;
 
     function addNearMeLayers() {
-        if (map.getSource('near-me-rings')) return; // already added
-        map.addSource('near-me-rings', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-        });
+        if (!map.getSource('near-me-rings')) {
+            map.addSource('near-me-rings', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+        }
+
+        // Add layers if they don't exist yet (they get wiped on style switch)
+        if (map.getLayer('near-me-rings-fill')) return;
 
         // Subtle orange fill inside each ring
         map.addLayer({

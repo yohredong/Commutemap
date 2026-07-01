@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disclaimer — COMMUTE Map</title>
+    <meta name="description" content="Disclaimer and liability limitation for the COMMUTE Map bicycle route map.">
+    <meta name="robots" content="noindex">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-cream:      #f5f0e3;
+            --border-color:  rgba(139, 119, 85, 0.25);
+            --text-primary:  #2c2a26;
+            --text-secondary:#6b6355;
+            --accent-blue:   #1565a0;
+            --accent-red:    #c93d2a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-cream);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 0 0 60px;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: rgba(255,255,255,0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .site-header a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .site-header img {
+            height: 40px;
+            width: auto;
+        }
+
+        .header-back {
+            margin-left: auto;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--accent-blue);
+            border-radius: 20px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .header-back:hover {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+        /* ── Main content ── */
+        .container {
+            max-width: 760px;
+            margin: 48px auto 0;
+            padding: 0 24px;
+        }
+
+        /* Warning banner */
+        .warning-banner {
+            background: #fff3cd;
+            border: 1.5px solid #e5a800;
+            border-left: 5px solid #e5a800;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 36px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .warning-banner .warn-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .warning-banner p {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #7a5900;
+            line-height: 1.55;
+        }
+
+        /* Page heading */
+        .page-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .page-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+        }
+
+        /* Sections */
+        .section {
+            background: rgba(255,255,255,0.70);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: var(--accent-blue);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.70rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section p,
+        .section li {
+            font-size: 0.875rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .section ul,
+        .section ol {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .section li {
+            margin-bottom: 6px;
+        }
+
+        /* Risk highlight box */
+        .risk-box {
+            background: rgba(201, 61, 42, 0.07);
+            border: 1px solid rgba(201, 61, 42, 0.25);
+            border-left: 4px solid var(--accent-red);
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-top: 14px;
+        }
+
+        .risk-box p {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #7a1a0f;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            margin-top: 48px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .page-footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 0 16px; }
+            .site-header { padding: 12px 16px; }
+            .page-title { font-size: 1.45rem; }
+            .section { padding: 18px 16px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="site-header">
+        <a href="index.html" title="Back to map">
+            <img src="https://static.wixstatic.com/media/c3baa3_78e34beab4264558aaf1f4f774ab7fcf~mv2.png/v1/fill/w_297,h_70,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2511%20BCMY%20%26%20CI%20Blue-Rectangular%20Logo%20A-01.png"
+                 alt="Commute Initiatives | Bike Commute Malaysia">
+        </a>
+        <a href="index.html" class="header-back">← Back to Map</a>
+    </header>
+
+    <main class="container">
+
+        <!-- Warning banner -->
+        <div class="warning-banner">
+            <span class="warn-icon">⚠️</span>
+            <p>The routes shown on this map are recorded by <strong>experienced bicycle commuters</strong> who navigate urban roads regularly. They are <strong>not beginner routes</strong> and should not be attempted without appropriate experience, equipment, and road awareness.</p>
+        </div>
+
+        <h1 class="page-title">Disclaimer</h1>
+        <p class="page-subtitle">Last updated: June 2026 &nbsp;·&nbsp; COMMUTE Map by Commute Initiatives Malaysia</p>
+
+        <!-- Section 1 -->
+        <div class="section">
+            <h2><span class="num">1</span> General Information Only</h2>
+            <p>The COMMUTE Map and all route data published on this platform is provided for <strong>general informational purposes only</strong>. Nothing on this map constitutes professional cycling, traffic, safety, or navigation advice. Route conditions, road infrastructure, traffic patterns, and hazards change frequently and may not be reflected in the data shown.</p>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="section">
+            <h2><span class="num">2</span> Experienced Riders Only — Do Not Attempt Without Proper Preparation</h2>
+            <p>The routes catalogued in this map have been ridden and submitted by <strong>seasoned bicycle commuters</strong> with significant experience navigating Malaysian urban roads. These routes may include:</p>
+            <ul>
+                <li>High-speed multi-lane roads and expressway-adjacent segments</li>
+                <li>Sections with no dedicated cycling infrastructure</li>
+                <li>Narrow roads shared with heavy vehicles, motorcycles, and buses</li>
+                <li>Challenging elevation changes, poor road surfaces, or insufficient lighting</li>
+                <li>Routes through areas with limited emergency access</li>
+            </ul>
+            <div class="risk-box">
+                <p>🚴 <strong>These routes are not suitable for casual or recreational cyclists, children, or anyone without prior experience commuting by bicycle on Malaysian roads.</strong> Attempting them without proper preparation, fitness, equipment, and road awareness may result in serious injury or death.</p>
+            </div>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="section">
+            <h2><span class="num">3</span> Limitation of Liability</h2>
+            <p>To the fullest extent permitted by applicable law, <strong>Commute Initiatives Malaysia, its organisers, volunteers, contributors, and affiliated parties</strong> expressly disclaim all liability for:</p>
+            <ul>
+                <li>Any personal injury, death, property damage, or loss arising from the use of, or reliance on, any route or information published on this map</li>
+                <li>Inaccuracies, omissions, or outdated information in the route data</li>
+                <li>Changes in road conditions, closures, hazards, or infrastructure that are not reflected in the map</li>
+                <li>Any decision made by a user based on the information displayed</li>
+                <li>Technical errors, interruptions, or inaccuracies in GPS tracking data submitted by contributors</li>
+            </ul>
+            <p style="margin-top:12px;">Use of this map and its data is entirely <strong>at your own risk</strong>.</p>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="section">
+            <h2><span class="num">4</span> User-Generated Content</h2>
+            <p>Routes on this map are submitted by community members and have <strong>not been independently verified</strong> for safety, legality, or accuracy. Commute Initiatives Malaysia does not endorse any specific route and makes no warranty, express or implied, regarding the suitability of any route for any individual user.</p>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="section">
+            <h2><span class="num">5</span> Road Safety — Your Responsibility</h2>
+            <p>All cyclists using this map are responsible for:</p>
+            <ul>
+                <li>Complying with all applicable Malaysian road traffic laws</li>
+                <li>Wearing appropriate personal protective equipment (helmet, high-visibility clothing, lights)</li>
+                <li>Conducting their own assessment of route suitability before riding</li>
+                <li>Ensuring their bicycle is roadworthy and properly maintained</li>
+                <li>Riding within their personal ability and fitness level</li>
+            </ul>
+        </div>
+
+        <!-- Section 6 -->
+        <div class="section">
+            <h2><span class="num">6</span> Changes to This Disclaimer</h2>
+            <p>Commute Initiatives Malaysia reserves the right to update or modify this disclaimer at any time without prior notice. Continued use of the COMMUTE Map constitutes acceptance of any revised terms.</p>
+        </div>
+
+        <!-- Section 7 -->
+        <div class="section">
+            <h2><span class="num">7</span> Contact</h2>
+            <p>For questions, corrections, or concerns regarding any routes or data on this map, please visit <a href="https://www.commute.works/" target="_blank" rel="noopener noreferrer">commute.works</a>.</p>
+        </div>
+
+        <footer class="page-footer">
+            <p>© 2026 Commute Initiatives Malaysia &nbsp;·&nbsp;
+               <a href="index.html">Return to Map</a> &nbsp;·&nbsp;
+               <a href="https://www.commute.works/" target="_blank" rel="noopener noreferrer">commute.works</a>
+            </p>
+        </footer>
+
+    </main>
+
+</body>
+</html>
