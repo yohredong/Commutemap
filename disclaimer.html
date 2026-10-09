@@ -8,25 +8,23 @@
     <meta name="description" content="Disclaimer and liability limitation for the COMMUTE Map bicycle route map.">
     <meta name="robots" content="noindex">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Locally bundled Urbanist -->
+    <link href="vendor/fonts/urbanist.css" rel="stylesheet">
 
     <style>
         :root {
-            --bg-cream:      #f5f0e3;
-            --border-color:  rgba(139, 119, 85, 0.25);
-            --text-primary:  #2c2a26;
-            --text-secondary:#6b6355;
-            --accent-blue:   #1565a0;
-            --accent-red:    #c93d2a;
+            --bg-cream:      #f7f6f6;
+            --border-color:  #c7c7c7;
+            --text-primary:  #333333;
+            --text-secondary:#595959;
+            --accent-blue:   #223a6a;
+            --accent-red:    #c05726;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Urbanist', sans-serif;
             background: var(--bg-cream);
             color: var(--text-primary);
             min-height: 100vh;
@@ -85,9 +83,9 @@
 
         /* Warning banner */
         .warning-banner {
-            background: #fff3cd;
-            border: 1.5px solid #e5a800;
-            border-left: 5px solid #e5a800;
+            background: #c9e3e8;
+            border: 1.5px solid #c05726;
+            border-left: 5px solid #c05726;
             border-radius: 8px;
             padding: 16px 20px;
             margin-bottom: 36px;
@@ -105,7 +103,7 @@
         .warning-banner p {
             font-size: 0.88rem;
             font-weight: 500;
-            color: #7a5900;
+            color: #223a6a;
             line-height: 1.55;
         }
 
@@ -175,8 +173,8 @@
 
         /* Risk highlight box */
         .risk-box {
-            background: rgba(201, 61, 42, 0.07);
-            border: 1px solid rgba(201, 61, 42, 0.25);
+            background: rgba(237, 88, 41, 0.07);
+            border: 1px solid rgba(237, 88, 41, 0.25);
             border-left: 4px solid var(--accent-red);
             border-radius: 6px;
             padding: 14px 18px;
@@ -186,7 +184,7 @@
         .risk-box p {
             font-size: 0.85rem;
             font-weight: 500;
-            color: #7a1a0f;
+            color: #223a6a;
             line-height: 1.6;
         }
 
