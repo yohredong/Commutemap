@@ -6,21 +6,28 @@
 // All 4 basemaps are loaded as raster sources on startup.
 // Switching basemaps just toggles layer visibility — custom layers are NEVER removed.
 const BASEMAP_TILES = {
-    light:     'https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}@2x.png',
-    dark:      'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
-    terrain:   'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+    light:     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    dark:      'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    terrain:   'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 };
 const BASEMAP_LAYER_IDS = Object.keys(BASEMAP_TILES).map(k => 'basemap-' + k);
 
 let currentBasemap = 'light';
 
+// Imported labels are text, even when a contributor enters HTML characters.
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
+
 // Start with a blank style — basemap tiles are added as raster sources in initMapLayers()
 const map = new maplibregl.Map({
     container: 'map',
     style: {
         version: 8,
-        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {},
         layers: []
     },
@@ -29,6 +36,11 @@ const map = new maplibregl.Map({
     pitch: 0,
     bearing: 0,
     antialias: true
+});
+
+map.on('error', event => {
+    console.error('Map rendering error:', event.error && event.error.message
+        ? event.error.message : String(event.error));
 });
 
 // ─── Mobile fullscreen: keep map canvas in sync with visible viewport ───
@@ -95,10 +107,13 @@ toggleBtn.addEventListener('click', () => {
 
 // Stores the dynamic expressions after data loads
 let colorByType = '#1565a0';
+const transportColors = new Map();
 let colorByDistance = null;
 let currentMode = 'type';   // 'type' | 'distance'
 
 function buildColorByDistance(minDist, maxDist) {
+    // MapLibre requires strictly increasing interpolation stops.
+    if (maxDist <= minDist) maxDist = minDist + 1;
     // Use 'interpolate' across the distance_km property
     const mid1 = minDist + (maxDist - minDist) * 0.33;
     const mid2 = minDist + (maxDist - minDist) * 0.66;
@@ -121,11 +136,7 @@ function resolveFeatureColor(props) {
         return '#e74c3c';
     }
     // By type (default)
-    const t = (props.type || '').toLowerCase();
-    if (t.includes('cycle') || t.includes('bicycle')) return '#1565a0';
-    if (t.includes('walk')) return '#c93d2a';
-    if (t.includes('scooter') || t.includes('electric')) return '#8e44ad';
-    return '#7f8c8d';
+    return transportColors.get(props.type || 'unknown') || '#7f8c8d';
 }
 
 // ─── Apply a color mode to both route layers ────
@@ -164,7 +175,10 @@ function initMapLayers() {
             type: 'raster',
             tiles: [tileUrl],
             tileSize: 256,
-            attribution: key === 'satellite' ? 'Tiles © Esri' : '© CARTO'
+            maxzoom: key === 'dark' ? 16 : 19,
+            attribution: key === 'light'
+                ? '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+                : 'Tiles © Esri and contributors'
         });
         map.addLayer({
             id: layerId,
@@ -266,7 +280,7 @@ function initMapLayers() {
 
                 // Station name labels appear at zoom ≥ 13
                 'text-field': ['step', ['zoom'], '', 13, ['coalesce', ['get', 'name'], '']],
-                'text-font': ['Open Sans SemiBold', 'Arial Unicode MS Bold'],
+                'text-font': ['Noto Sans Bold'],
                 'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 16, 12],
                 'text-anchor': 'top',
                 'text-offset': [0, 1.6],
@@ -324,7 +338,7 @@ function initMapLayers() {
         minzoom: 11, // Relaxed zoom requirement
         layout: {
             'text-field': ['get', 'label'],
-            'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+            'text-font': ['Noto Sans Regular'],
             'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 15, 12],
             'symbol-placement': 'line',
             'text-anchor': 'bottom',
@@ -371,7 +385,7 @@ function initMapLayers() {
         layout: {
             'text-field': ['get', 'label'],
             'text-size': 11,
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-font': ['Noto Sans Bold'],
             'text-allow-overlap': true,
             'text-ignore-placement': true
         },
@@ -407,7 +421,7 @@ function initMapLayers() {
         layout: {
             'text-field': ['get', 'label'],
             'text-size': 10,
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-font': ['Noto Sans Bold'],
             'text-allow-overlap': true,
             'text-ignore-placement': true
         },
@@ -806,13 +820,14 @@ function initMapLayers() {
                         pIdx++;
                     }
                     matchExprType.push(t, color);
+                    transportColors.set(t, color);
                     // Title case for legend
                     const label = t.charAt(0).toUpperCase() + t.slice(1);
                     legendHtmlType += `
                         <label class="legend-item" style="cursor: pointer;">
-                            <input type="checkbox" class="type-filter" value="${t}" checked>
+                            <input type="checkbox" class="type-filter" value="${escapeHtml(t)}" checked>
                             <span class="color-line" style="background: ${color};"></span>
-                            <span>${label}</span>
+                            <span>${escapeHtml(label)}</span>
                         </label>
                     `;
                 });
@@ -828,7 +843,9 @@ function initMapLayers() {
                 applyColorMode(currentMode);
 
                 map.fitBounds(bounds, {
-                    padding: { top: 50, bottom: 50, left: 380, right: 50 },
+                    padding: window.innerWidth <= 600
+                        ? { top: 60, bottom: 80, left: 30, right: 30 }
+                        : { top: 50, bottom: 50, left: 380, right: 50 },
                     maxZoom: 14,
                     duration: 2000
                 });
@@ -1005,7 +1022,7 @@ function initMapLayers() {
 
         // Build source link button if available
         let sourceLinkHTML = '';
-        if (sourceLink && sourceType !== 'Uploaded GPX (Drive)') {
+        if (/^https?:\/\//i.test(sourceLink) && sourceType !== 'Uploaded GPX (Drive)') {
             const isStrava  = sourceType.toLowerCase().includes('strava');
             const isKomoot  = sourceType.toLowerCase().includes('komoot');
             const icon  = isStrava ? '🟠' : isKomoot ? '🟢' : '🔗';
@@ -1030,16 +1047,18 @@ function initMapLayers() {
             fields.map(f => `
                 <div class="route-field-row">
                     <span class="route-field-label">${f.label}</span>
-                    <span class="route-field-value">${f.value}</span>
+                    <span class="route-field-value">${escapeHtml(f.value)}</span>
                 </div>`).join('') + sourceLinkHTML;
 
         detailPanel.classList.add('open');
         detailPanel.setAttribute('aria-hidden', 'false');
+        document.getElementById('basemap-picker').classList.add('detail-open');
     }
 
     function closeDetailPanel() {
         detailPanel.classList.remove('open');
         detailPanel.setAttribute('aria-hidden', 'true');
+        document.getElementById('basemap-picker').classList.remove('detail-open');
         map.setPaintProperty('route-isolation-bg', 'fill-opacity', 0);
         if (map.getLayer('selected-route')) {
             map.setFilter('selected-route', ['==', ['id'], '']);
@@ -1257,7 +1276,7 @@ document.getElementById('sidebar').addEventListener('change', (e) => {
             minzoom: 11,
             layout: {
                 'text-field': ['get', 'label'],
-                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+                'text-font': ['Noto Sans Regular'],
                 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 15, 12],
                 'symbol-placement': 'line',
                 'text-anchor': 'bottom',

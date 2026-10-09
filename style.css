@@ -793,6 +793,10 @@ input:checked + .slider:before {
 
 /* ── Mobile: bottom sheet ────────────────────────── */
 @media (max-width: 767px) {
+    .basemap-picker.detail-open {
+        display: none;
+    }
+
     .route-detail-panel {
         top: auto;
         right: 0;
@@ -1051,6 +1055,16 @@ input:checked + .slider:before {
 
 /* Mobile (≤640px): icon-only labels, scrollable strip, sits above Near Me FAB */
 @media (max-width: 640px) {
+    .sidebar {
+        width: min(320px, calc(100vw - 40px));
+        max-height: calc(100dvh - 140px);
+        overflow-y: auto;
+    }
+
+    .sidebar > * {
+        flex-shrink: 0;
+    }
+
     .basemap-picker {
         bottom: 80px;       /* above Near Me button */
         right: 10px;
